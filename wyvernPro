@@ -1,5 +1,5 @@
 -- // KEY CONFIGURATION //
-local correctKey = "Wyvern Pro"
+local correctKey = "Wyvern"
 local keyLink = "https://discord.gg/HHyvyWDy3a"
 
 -- // KEY SYSTEM INTERFACE //
@@ -11,7 +11,7 @@ local VerifyBtn = Instance.new("TextButton")
 local GetKeyBtn = Instance.new("TextButton")
 
 ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.Name = "KeySystemWyvern"
+ScreenGui.Name = "KeySystemWyren"
 
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
@@ -24,7 +24,7 @@ MainFrame.Draggable = true
 
 Title.Parent = MainFrame
 Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "Wyvren Pro | KEY SYSTEM"
+Title.Text = "Wyren | KEY SYSTEM"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 
@@ -283,7 +283,7 @@ local Success, Library = pcall(function()
                                 for _, Plr in ipairs(Players : GetPlayers()) do if Plr ~= LocalPlayer then CreateESP(Plr) end end
 
                                     local FOV_ScreenGui = Instance.new("ScreenGui")
-                                    FOV_ScreenGui.Name = "Wyvren_FOV"
+                                    FOV_ScreenGui.Name = "Wyren_FOV"
                                     FOV_ScreenGui.ResetOnSpawn = false
                                     FOV_ScreenGui.IgnoreGuiInset = true
                                     FOV_ScreenGui.DisplayOrder = 9999
@@ -360,22 +360,22 @@ local Success, Library = pcall(function()
                                                                                 local target = GetTarget()
                                                                                 if target then
                                                                                     Stroke.Color = Aimbot.FOV_LockedColor
-
+                                                                                    
                                                                                     -- Daha pürüzsüz takip için Smoothness hesaplaması
                                                                                     local smoothVal = math.max(1, Aimbot.Smoothness)
                                                                                     local lookCFrame = CFrame.lookAt(Camera.CFrame.Position, target)
-
+                                                                                    
                                                                                     Camera.CFrame = Camera.CFrame:Lerp(lookCFrame, 1 / smoothVal)
                                                                                 else
                                                                                     Stroke.Color = Aimbot.FOV_Color
-                                                                                    end
+                                                                                end
                                                                             else
                                                                                 Stroke.Color = Aimbot.FOV_Color
-                                                                                end
-                                                                                end)
+                                                                            end
+                                                                        end)
 
-                                                                        Library : Watermark("Wyvren Pro | V 1.0")
-                                                                        local Window = Library : Window("Wyvren Pro")
+                                                                        Library : Watermark(" Wyren Pro | V 1.0")
+                                                                        local Window = Library : Window("Wyren Pro)
 
                                                                         Window : Section("Main")
 
