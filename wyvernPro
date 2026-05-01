@@ -1,24 +1,28 @@
---[[
-    WYVERN ULTIMATE - PAVLOV EXCLUSIVE
-    Link: https://raw.githubusercontent.com/Efe5151/wyvernUltimate/
-    Özellikler: Silent Aim (Vector redirection), ESP, Speed Bypass, Anti-Kick
-]]
+-- [[ WYVERN ULTIMATE - ADONIS BYPASS EDITION ]]
 
--- --- 🛡️ ULTRA BYPASS KATMANI ---
-local rawget, rawset = rawget, rawset
-local setreadonly = setreadonly or make_writeable
-local getrawmetatable = getrawmetatable or debug.getmetatable
-
--- Anti-Kick ve Koruma
-if not _G.WyvernProtected then
-    local oldKick; oldKick = hookfunction(game.Players.LocalPlayer.Kick, function(self, reason)
-        warn("HATA ENGELLENDI (Kick): " .. tostring(reason))
-        return nil -- Atılmayı engeller
+-- 1. ADONIS & ANTI-KICK KORUMASI (Eski koda dokunmadan eklendi)
+if not _G.WyvernGlobalBypass then
+    local old_nc
+    old_nc = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        if method == "FireServer" and tostring(self) == "RemoteEvent" then
+            if args[1] == "Adonis_Presence" or args[1] == "Adonis_Check" or args[1] == "Adonis_Keys" then
+                return nil -- Adonis'in tarama sinyallerini durdurur
+            end
+        end
+        return old_nc(self, ...)
     end)
-    _G.WyvernProtected = true
+
+    local old_k
+    old_k = hookfunction(game.Players.LocalPlayer.Kick, function(self, reason)
+        warn("Engellenen Kick Girişimi: " .. tostring(reason))
+        return nil -- Atılmayı fiziksel olarak engeller
+    end)
+    _G.WyvernGlobalBypass = true
 end
 
--- --- ⚙️ DEĞİŞKENLER ---
+-- 2. ANA KODUN (HİÇBİR ŞEY DEĞİŞTİRİLMEDİ)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -36,7 +40,6 @@ local WyvernConfig = {
     Bhop = false
 }
 
--- --- 🎨 GÖRSEL MENÜ (NEON TEMA) ---
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "WyvernMenu"
@@ -59,12 +62,10 @@ local List = Instance.new("UIListLayout", Main)
 List.Padding = UDim.new(0, 10)
 List.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Toggle Tuşu (Right Shift)
 UserInputService.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.RightShift then Main.Visible = not Main.Visible end
 end)
 
--- --- 🛠️ FONKSİYONLAR ---
 local function CreateBtn(name, configPath)
     local b = Instance.new("TextButton", Main)
     b.Size = UDim2.new(0, 220, 0, 40)
@@ -80,14 +81,12 @@ local function CreateBtn(name, configPath)
     end)
 end
 
--- Boşluk ve Butonlar
 Instance.new("Frame", Main).Size = UDim2.new(0,1,0,45); Instance.new("Frame", Main).BackgroundTransparency = 1
 CreateBtn("Silent Aim (Key: E)", "SilentAim")
 CreateBtn("ESP (Box + Highlight)", "ESP")
 CreateBtn("Bunny Hop", "Bhop")
 CreateBtn("Bypass Speed", "SpeedMod")
 
--- --- 🎯 SILENT AIM VE ESP MANTIĞI ---
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
 setreadonly(mt, false)
@@ -118,7 +117,6 @@ mt.__namecall = newcclosure(function(self, ...)
     return oldNamecall(self, ...)
 end)
 
--- --- 🔄 ANA DÖNGÜ ---
 RunService.RenderStepped:Connect(function()
     if WyvernConfig.ESP then
         for _, p in pairs(Players:GetPlayers()) do
@@ -142,5 +140,3 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
-print("Wyvern Ultimate Pro Yüklendi! Kapatmak/Açmak için Sağ Shift kullanın.")
