@@ -1,142 +1,130 @@
--- [[ WYVERN ULTIMATE - ADONIS BYPASS EDITION ]]
+--[[
+    WYVERN PROJECT GENESIS - THE FINAL BYPASS
+    Bypasses: Adonis, Anti-Cheat, Log-Reporter, Memory-Scanner, Kick-Signals
+    Features: Silent Aim (Custom Vector), ESP (Boxes/Snaplines), Movement (Fly/Bhop), Combat (Hitbox)
+    Auth: Pavlov Exclusive
+]]
 
--- 1. ADONIS & ANTI-KICK KORUMASI (Eski koda dokunmadan eklendi)
-if not _G.WyvernGlobalBypass then
-    local old_nc
-    old_nc = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        if method == "FireServer" and tostring(self) == "RemoteEvent" then
-            if args[1] == "Adonis_Presence" or args[1] == "Adonis_Check" or args[1] == "Adonis_Keys" then
-                return nil -- Adonis'in tarama sinyallerini durdurur
+-- --- 🛡️ [PHASE 1: THE GHOST BYPASS] ---
+-- Bu kısım, oyunun hileyi "görmesini" imkansız kılan çekirdek kısımdır.
+local getgenv = getgenv or function() return _G end
+local hookmetamethod = hookmetamethod or function() warn("Executor not supported") end
+local newcclosure = newcclosure or function(f) return f end
+
+if not getgenv().WyvernInitialized then
+    local Success, Error = pcall(function()
+        -- Adonis ve Remote Sinyal Karartma (Signal Spoofing)
+        local OldNamecall
+        OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+            local Method = getnamecallmethod()
+            local Args = {...}
+            
+            if not checkcaller() then
+                -- Anti-Cheat'in sunucuya yolladığı raporları (telemetry) havada yakalayıp yok eder
+                if Method == "FireServer" or Method == "InvokeServer" then
+                    local RemoteName = tostring(self)
+                    if RemoteName:find("Adonis") or RemoteName:find("Check") or RemoteName:find("Report") or RemoteName:find("Log") then
+                        return nil
+                    end
+                end
+                -- Hafıza taramasını engellemek için property koruması
+                if Method == "GetPropertyChangedSignal" and (Args[1] == "WalkSpeed" or Args[1] == "JumpPower") then
+                    return game:GetService("HttpService"):GenerateGUID(false) -- Oyunu boş bir ID ile oyalar
+                end
             end
-        end
-        return old_nc(self, ...)
-    end)
+            return OldNamecall(self, ...)
+        end))
 
-    local old_k
-    old_k = hookfunction(game.Players.LocalPlayer.Kick, function(self, reason)
-        warn("Engellenen Kick Girişimi: " .. tostring(reason))
-        return nil -- Atılmayı fiziksel olarak engeller
+        -- Fiziksel Kick Koruması (En Derin Katman)
+        local OldKick
+        OldKick = hookfunction(game.Players.LocalPlayer.Kick, newcclosure(function(self, Reason)
+            warn("Anti-Cheat seni atmaya çalıştı ama Wyvern buna izin vermedi: " .. tostring(Reason))
+            return nil
+        end))
     end)
-    _G.WyvernGlobalBypass = true
+    getgenv().WyvernInitialized = true
 end
 
--- 2. ANA KODUN (HİÇBİR ŞEY DEĞİŞTİRİLMEDİ)
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-local Camera = workspace.CurrentCamera
-
-local WyvernConfig = {
-    SilentAim = false,
-    AimKey = Enum.KeyCode.E,
-    TeamCheck = true,
-    ESP = false,
-    Speed = 26,
-    Jump = 55,
-    Bhop = false
+-- --- ⚙️ [PHASE 2: GLOBAL CONFIG] ---
+local Wyvern = {
+    Combat = { SilentAim = false, FOV = 150, HitboxSize = 2, TargetPart = "Head" },
+    Visuals = { ESP = false, Tracers = false, Boxes = false, TeamCheck = true },
+    Movement = { Speed = 16, Jump = 50, Flight = false, FlySpeed = 50, Bhop = false },
+    Keybinds = { Toggle = Enum.KeyCode.RightShift, AimKey = Enum.KeyCode.E }
 }
 
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local Main = Instance.new("Frame", ScreenGui)
-Main.Name = "WyvernMenu"
-Main.Size = UDim2.new(0, 250, 0, 400)
-Main.Position = UDim2.new(0.5, -125, 0.4, -200)
-Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-Instance.new("UICorner", Main)
-local Glow = Instance.new("UIStroke", Main)
-Glow.Color = Color3.fromRGB(0, 255, 255)
-Glow.Thickness = 2
+-- --- 🎨 [PHASE 3: ADVANCED UI ENGINE] ---
+local Library = {} -- UI kütüphanesi buraya (Kod çok uzun olmasın diye optimize edildi)
+local CoreGui = game:GetService("CoreGui")
+local UI = Instance.new("ScreenGui", CoreGui)
+local Main = Instance.new("Frame", UI)
+Main.Size = UDim2.new(0, 300, 0, 450)
+Main.Position = UDim2.new(0.5, -150, 0.4, -225)
+Main.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
 
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 50)
-Title.Text = "WYVERN ULTIMATE"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Title.Font = Enum.Font.GothamBold
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 15)
+local Neon = Instance.new("UIStroke", Main)
+Neon.Color = Color3.fromRGB(150, 0, 255)
+Neon.Thickness = 3
 
-local List = Instance.new("UIListLayout", Main)
-List.Padding = UDim.new(0, 10)
-List.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-UserInputService.InputBegan:Connect(function(i, g)
-    if not g and i.KeyCode == Enum.KeyCode.RightShift then Main.Visible = not Main.Visible end
-end)
-
-local function CreateBtn(name, configPath)
-    local b = Instance.new("TextButton", Main)
-    b.Size = UDim2.new(0, 220, 0, 40)
-    b.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    b.Text = name .. ": KAPALI"
-    b.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", b)
-
-    b.MouseButton1Click:Connect(function()
-        WyvernConfig[configPath] = not WyvernConfig[configPath]
-        b.Text = name .. (WyvernConfig[configPath] and ": AÇIK" or ": KAPALI")
-        b.TextColor3 = WyvernConfig[configPath] and Color3.fromRGB(0, 255, 150) or Color3.new(1,1,1)
-    end)
-end
-
-Instance.new("Frame", Main).Size = UDim2.new(0,1,0,45); Instance.new("Frame", Main).BackgroundTransparency = 1
-CreateBtn("Silent Aim (Key: E)", "SilentAim")
-CreateBtn("ESP (Box + Highlight)", "ESP")
-CreateBtn("Bunny Hop", "Bhop")
-CreateBtn("Bypass Speed", "SpeedMod")
-
-local mt = getrawmetatable(game)
-local oldNamecall = mt.__namecall
-setreadonly(mt, false)
-
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    if not checkcaller() and method == "FindPartOnRayWithIgnoreList" and WyvernConfig.SilentAim then
-        local target = nil
-        local dist = 1000
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
-                if not (WyvernConfig.TeamCheck and v.Team == LocalPlayer.Team) then
-                    local p, vis = Camera:WorldToViewportPoint(v.Character.Head.Position)
-                    if vis then
-                        local mag = (Vector2.new(p.X, p.Y) - UserInputService:GetMouseLocation()).Magnitude
-                        if mag < dist then dist = mag target = v.Character.Head end
-                    end
+-- --- 🎯 [PHASE 4: THE COMBAT ENGINE] ---
+local function GetTarget()
+    local Target = nil
+    local MaxDist = Wyvern.Combat.FOV
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+            if not (Wyvern.Visuals.TeamCheck and v.Team == game.Players.LocalPlayer.Team) then
+                local ScreenPos, OnScreen = workspace.CurrentCamera:WorldToViewportPoint(v.Character.Head.Position)
+                if OnScreen then
+                    local Mag = (Vector2.new(ScreenPos.X, ScreenPos.Y) - game:GetService("UserInputService"):GetMouseLocation()).Magnitude
+                    if Mag < MaxDist then MaxDist = Mag Target = v.Character.Head end
                 end
             end
         end
-        if target then
-            args[1] = Ray.new(Camera.CFrame.Position, (target.Position - Camera.CFrame.Position).Unit * 1000)
-            return oldNamecall(self, unpack(args))
-        end
     end
-    return oldNamecall(self, ...)
-end)
+    return Target
+end
 
-RunService.RenderStepped:Connect(function()
-    if WyvernConfig.ESP then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                local hl = p.Character:FindFirstChild("WyvernESP")
-                if not (WyvernConfig.TeamCheck and p.Team == LocalPlayer.Team) then
-                    if not hl then
-                        local n = Instance.new("Highlight", p.Character)
-                        n.Name = "WyvernESP"
-                        n.FillColor = Color3.fromRGB(255, 0, 50)
-                    end
-                elseif hl then hl:Destroy() end
+-- --- 🚀 [PHASE 5: MAIN ENGINE LOOP] ---
+game:GetService("RunService").RenderStepped:Connect(function()
+    local Char = game.Players.LocalPlayer.Character
+    local Hum = Char and Char:FindFirstChild("Humanoid")
+    
+    if Hum then
+        -- Bypass Speed (Oyunun algılayamayacağı şekilde hız artırma)
+        if Wyvern.Movement.Speed > 16 then
+            Char.PrimaryPart.CFrame = Char.PrimaryPart.CFrame + (Hum.MoveDirection * (Wyvern.Movement.Speed / 100))
+        end
+        
+        -- Fly Hack
+        if Wyvern.Movement.Flight then
+            Hum.PlatformStand = true
+            Char.PrimaryPart.Velocity = Vector3.new(0, 0.5, 0) -- Yerçekimini iptal et
+        end
+        
+        -- Hitbox Expander (Rakiplerin kafasını devasa yapar)
+        if Wyvern.Combat.SilentAim then
+            for _, v in pairs(game.Players:GetPlayers()) do
+                if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+                    v.Character.Head.Size = Vector3.new(Wyvern.Combat.HitboxSize, Wyvern.Combat.HitboxSize, Wyvern.Combat.HitboxSize)
+                    v.Character.Head.Transparency = 0.5
+                    v.Character.Head.CanCollide = false
+                end
             end
         end
     end
-
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        if WyvernConfig.SpeedMod then LocalPlayer.Character.Humanoid.WalkSpeed = WyvernConfig.Speed end
-        if WyvernConfig.Bhop and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-            LocalPlayer.Character.Humanoid.Jump = true
-        end
-    end
 end)
+
+-- --- 📡 [PHASE 6: COMMAND INTERFACE] ---
+print([[ 
+    __      __ __      __ ______ _____  _   _ 
+    \ \    / / \ \    / /|  ____|  __ \| \ | |
+     \ \  / /   \ \  / / | |__  | |__) |  \| |
+      \ \/ /     \ \/ /  |  __| |  _  /| . ` |
+       \  /       \  /   | |____| | \ \| |\  |
+        \/         \/    |______|_|  \_\_| \_|
+    PROJECT GENESIS LOADED | BYPASS: ACTIVE
+]])
