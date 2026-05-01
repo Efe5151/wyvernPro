@@ -1,81 +1,79 @@
--- [[ WYVERN BYPASS - ANTI-267 & OMNI-SHIELD ]]
-if not _G.WyvernBypassActive then
-    local task = task or {wait = wait, spawn = spawn}
-    
-    -- 1. [IMMEDIATE KICK VOID] - Kick fonksiyonunu tamamen felç eder
+-- [[ WYVERN PRO - XENO & GLOBAL BYPASS ]]
+-- Amaç: Adonis 267 Hatasını aşmak ve her özelliği gizli (bypass) çalıştırmak.
+
+local Success, Error = pcall(function()
+    -- 🛡️ [PHASE 1: UNIVERSAL BYPASS]
     local lp = game:GetService("Players").LocalPlayer
+    
+    -- Kick fonksiyonunu etkisizleştir (Xeno Uyumluluk Modu)
     if lp then
-        hookfunction(lp.Kick, newcclosure(function() 
-            warn("Wyvern: Atılma girişimi başarıyla engellendi.")
-            return nil 
-        end))
+        local oldKick
+        oldKick = hookfunction(lp.Kick, function(self, reason)
+            warn("Wyvern: Kick engellendi! Sebep: " .. tostring(reason))
+            return nil
+        end)
     end
 
-    -- 2. [NAMECALL BLACKOUT] - Adonis sinyallerini uzay boşluğuna gönderir
+    -- Namecall Bypass (Adonis & AC sinyallerini susturur)
     local mt = getrawmetatable(game)
-    local old_nc = mt.__namecall
+    local oldNC = mt.__namecall
     setreadonly(mt, false)
 
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
         if not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
-            local r_name = tostring(self)
-            -- Kritik Adonis ve Gizli Check'leri yakalar
-            if r_name:find("Adonis") or r_name:find("Check") or r_name:find("\0") or r_name:find("Control") then
-                return nil 
+            local rName = tostring(self)
+            if rName:find("Adonis") or rName:find("Check") or rName:find("\0") or rName:find("Control") or rName:find("Log") then
+                return nil -- Sinyali sunucuya gönderme, Adonis'i kör et.
             end
         end
-        return old_nc(self, ...)
+        return oldNC(self, ...)
     end)
     setreadonly(mt, true)
+end)
 
-    _G.WyvernBypassActive = true
-    print("Wyvern Anti-267 Bypass: AKTİF")
-end
+if not Success then warn("Bypass Hatası: " .. tostring(Error)) end
 
--- --- ⚙️ [ELITE CONFIGURATION] ---
+-- ⚙️ [PHASE 2: ELITE CONFIG]
 local Wyvern = {
     Combat = {
-        Aimbot = false,
-        SilentAim = true, -- Varsayılan olarak Silent Aim aktif
-        FOV = 150,
+        SilentAim = true,
+        FOV = 180,
         AimKey = Enum.KeyCode.E,
-        TargetPart = "Head",
-        Smoothing = 0.1
+        TargetPart = "Head"
     },
     Visuals = {
-        ESP = true, -- ESP varsayılan açık
+        ESP = true,
         Boxes = true,
         Names = true,
         TeamCheck = true,
         FOVCircle = true
     },
     Movement = {
-        WalkSpeed = 32, -- Hız artırıldı
-        JumpPower = 50,
+        WalkSpeed = 35, -- Anti-Ban sınırında hız
+        JumpPower = 60,
         Bhop = true,
-        InfiniteJump = false
+        InfJump = false
     },
     MenuKey = Enum.KeyCode.RightShift
 }
 
--- --- 🎯 [COMBAT & VISUAL ENGINE] ---
+-- 🎯 [PHASE 3: TARGETING ENGINE]
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Color = Color3.fromRGB(0, 255, 255)
 FOVCircle.Thickness = 1
-FOVCircle.Visible = true
+FOVCircle.Filled = false
 
 local function GetTarget()
-    local Target = nil
-    local Dist = Wyvern.Combat.FOV
+    local Target, MaxDist = nil, Wyvern.Combat.FOV
     for _, v in pairs(game.Players:GetPlayers()) do
         if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild(Wyvern.Combat.TargetPart) then
             if not (Wyvern.Visuals.TeamCheck and v.Team == game.Players.LocalPlayer.Team) then
-                local Pos, Visible = workspace.CurrentCamera:WorldToViewportPoint(v.Character[Wyvern.Combat.TargetPart].Position)
-                if Visible then
-                    local Mag = (Vector2.new(Pos.X, Pos.Y) - game:GetService("UserInputService"):GetMouseLocation()).Magnitude
-                    if Mag < Dist then 
-                        Dist = Mag 
+                local pos, vis = workspace.CurrentCamera:WorldToViewportPoint(v.Character[Wyvern.Combat.TargetPart].Position)
+                if vis then
+                    local mag = (Vector2.new(pos.X, pos.Y) - game:GetService("UserInputService"):GetMouseLocation()).Magnitude
+                    if mag < MaxDist then 
+                        MaxDist = mag 
                         Target = v.Character[Wyvern.Combat.TargetPart] 
                     end
                 end
@@ -85,9 +83,9 @@ local function GetTarget()
     return Target
 end
 
--- --- 🔄 [CORE UPDATE LOOP] ---
+-- 🔄 [PHASE 4: MAIN LOOP - BYPASSED FEATURES]
 game:GetService("RunService").RenderStepped:Connect(function()
-    -- FOV Update
+    -- FOV Visual
     FOVCircle.Visible = Wyvern.Visuals.FOVCircle
     FOVCircle.Radius = Wyvern.Combat.FOV
     FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
@@ -97,32 +95,15 @@ game:GetService("RunService").RenderStepped:Connect(function()
     local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
     
     if Hum and HRP then
-        -- Advanced WalkSpeed Bypass (Anti-detections dostu)
+        -- 🚀 Speed Bypass (CFrame Injection)
         if Wyvern.Movement.WalkSpeed > 16 then
             HRP.CFrame = HRP.CFrame + (Hum.MoveDirection * (Wyvern.Movement.WalkSpeed / 100))
         end
-        -- Bhop
+        -- 🐰 Bhop
         if Wyvern.Movement.Bhop and game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) and Hum.FloorMaterial ~= Enum.Material.Air then
             Hum.Jump = true
         end
     end
-
-    -- Combat Logic
-    if (Wyvern.Combat.Aimbot or Wyvern.Combat.SilentAim) and game:GetService("UserInputService"):IsKeyDown(Wyvern.Combat.AimKey) then
-        local Target = GetTarget()
-        if Target then
-            if Wyvern.Combat.Aimbot then
-                workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Target.Position)
-            end
-        end
-    end
 end)
 
--- Menü Aç/Kapat
-game:GetService("UserInputService").InputBegan:Connect(function(Key, GPE)
-    if not GPE and Key.KeyCode == Wyvern.MenuKey then
-        print("Wyvern: Menü yakında eklenecek!")
-    end
-end)
-
-print("WYVERN ULTRA-INSTINCT LOADED | BYPASS LEVEL: MAX")
+print("WYVERN XENO-ALPHA LOADED | BYPASS: SUPREME")
