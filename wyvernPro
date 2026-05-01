@@ -1,18 +1,19 @@
--- [[ WYVERN PRO - KEY ONLY UPDATE ]]
--- Edit By Roxy | Sağ Tık Tamamen Kaldırıldı
+-- [[ WYVERN PRO - AUTO SHOOT & NO MOUSE EDITION ]]
+-- Edit By Roxy | Youtube: Pavlov
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 _G.SilentAim = false
-_G.AimKey = Enum.KeyCode.E -- Başlangıç tuşu E, menüden değiştirebilirsin
+_G.AimKey = Enum.KeyCode.E
 _G.FOV = 150
 _G.ESP = false
 _G.WallCheck = true
+_G.AutoShoot = false -- Yeni Özellik
 
 local Window = Rayfield:CreateWindow({
    Name = "Wyvern Pro",
    LoadingTitle = "Edit By Roxy",
-   LoadingSubtitle = "No Mouse Lock Edition",
+   LoadingSubtitle = "Auto-Shoot Update",
    ConfigurationSaving = { Enabled = false }
 })
 
@@ -25,13 +26,16 @@ CombatTab:CreateToggle({
 })
 
 CombatTab:CreateKeybind({
-   Name = "Kilitleme Tuşu (Menüden Değiştir)",
+   Name = "Kilitleme Tuşu",
    CurrentKeybind = "E",
    HoldToInteract = false,
-   Callback = function(Key) 
-       _G.AimKey = Key 
-       Rayfield:Notify({Title = "Sistem", Content = "Tuş atandı: "..tostring(Key), Duration = 2})
-   end,
+   Callback = function(Key) _G.AimKey = Key end,
+})
+
+CombatTab:CreateToggle({
+   Name = "Otomatik Ateş (Auto Shoot)",
+   CurrentValue = false,
+   Callback = function(v) _G.AutoShoot = v end,
 })
 
 CombatTab:CreateToggle({
@@ -48,7 +52,7 @@ CombatTab:CreateSlider({
    Callback = function(v) _G.FOV = v end,
 })
 
--- LOGIC (ARKA PLAN MOTORU)
+-- LOGIC MOTORU
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1.5
 FOVCircle.Color = Color3.fromRGB(255, 255, 255)
@@ -59,10 +63,16 @@ local function IsVisible(target)
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
     params.FilterDescendantsInstances = {char, target.Parent}
-    local origin = workspace.CurrentCamera.CFrame.Position
-    local direction = (target.Position - origin).Unit * (target.Position - origin).Magnitude
-    local result = workspace:Raycast(origin, direction, params)
+    local result = workspace:Raycast(workspace.CurrentCamera.CFrame.Position, (target.Position - workspace.CurrentCamera.CFrame.Position).Unit * 500, params)
     return result == nil
+end
+
+-- Otomatik Ateş Fonksiyonu (Sol Tık Simülasyonu)
+local function Shoot()
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0) -- Sol Tık Bas
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0) -- Sol Tık Bırak
 end
 
 game:GetService("RunService").RenderStepped:Connect(function()
@@ -70,10 +80,10 @@ game:GetService("RunService").RenderStepped:Connect(function()
     FOVCircle.Radius = _G.FOV
     FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
 
-    -- SADECE KLAVYE TUŞU KONTROLÜ (Mouse kontrolü silindi)
     if _G.SilentAim and game:GetService("UserInputService"):IsKeyDown(_G.AimKey) then
         local target = nil
         local dist = _G.FOV
+        
         for _, v in pairs(game.Players:GetPlayers()) do
             if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                 local p, vis = workspace.CurrentCamera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
@@ -86,10 +96,17 @@ game:GetService("RunService").RenderStepped:Connect(function()
                 end
             end
         end
+        
         if target then
+            -- Kilitlenme
             workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Position)
+            
+            -- Otomatik Ateş
+            if _G.AutoShoot then
+                Shoot()
+            end
         end
     end
 end)
 
-Rayfield:Notify({Title = "Wyvern Pro Aktif", Content = "Sağ tık bağımlılığı kaldırıldı!", Duration = 5})
+Rayfield:Notify({Title = "Wyvern Pro", Content = "Auto Shoot ve Tuş Kilidi Düzeldi!", Duration = 5})
