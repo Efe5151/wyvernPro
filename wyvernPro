@@ -1,31 +1,39 @@
---[[
-    WYVERN ULTRA-INSTINCT v4 (FINAL)
-    Project Status: UNDETECTED BEYOND REASON
-    Bypasses: Adonis, Sentinel, Memory Integrity, Signal Spoofing
-    Author: Pavlov Exclusive
-]]
+-- [[ WYVERN  BYPASS - ANTI-267 ]]
 
--- --- 🛡️ [THE GOD-TIER BYPASS] ---
-local getgenv = getgenv or function() return _G end
-if not getgenv().WyvernCoreLoaded then
-    -- Sinyal Karartma: Oyunun sunucuya veri gönderme hattını ele geçiriyoruz
-    local OldNC
-    OldNC = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        local Method = getnamecallmethod()
-        local Args = {...}
-        if not checkcaller() and (Method == "FireServer" or Method == "InvokeServer") then
-            local Name = tostring(self)
-            -- 267 Hatasını tetikleyen gizli casusları (Adonis vb.) engeller
-            if Name:find("Adonis") or Name:find("\0") or Name:find("Check") or Name:find("Report") then
+
+if not _G.WyvernBypassActive then
+    local task = task or {wait = wait, spawn = spawn}
+    
+    -- 1. [IMMEDIATE KICK VOID] 
+    local lp = game:GetService("Players").LocalPlayer
+    if lp then
+        hookfunction(lp.Kick, newcclosure(function() 
+            return nil 
+        end))
+    end
+
+    -- 2. [NAMEOCALL BLACKOUT] - 
+    local mt = getrawmetatable(game)
+    local old_nc = mt.__namecall
+    setreadonly(mt, false)
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+            local r_name = tostring(self)
+            if r_name:find("Adonis") or r_name:find("Check") or r_name:find("\0") or r_name:find("Control") then
                 return nil 
             end
         end
-        return OldNC(self, ...)
-    end))
+        return old_nc(self, ...)
+    end)
+    setreadonly(mt, true)
 
-    -- Kick Yetkisi İptali: Oyun seni atmak istese bile fonksiyon boş döner
-    hookfunction(game.Players.LocalPlayer.Kick, newcclosure(function() return nil end))
-    getgenv().WyvernCoreLoaded = true
+    _G.WyvernBypassActive = true
+end
+
+
+print("Wyvern Anti-267 Bypass: AKTİF")
 end
 
 -- --- ⚙️ [ELITE CONFIGURATION] ---
@@ -108,7 +116,7 @@ game:GetService("RunService").RenderStepped:Connect(function()
             if Wyvern.Combat.Aimbot then
                 workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Target.Position)
             end
-            -- Silent Aim mermi yolunu metatable üzerinden değiştirir
+            -- 
         end
     end
 end)
